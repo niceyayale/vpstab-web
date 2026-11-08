@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPS Hosting Plans: Which Specs Matter and Which Do Not - VPSTab - VPS Knowledge & Plan Explorer</title>
+  <meta name="description" content="VPS Hosting Plans: Which Specs Matter and Which Do Not">
+  <meta name="keywords" content="vps, hosting, benchmarks, infrastructure">
+  <meta name="author" content="VPSTab - VPS Knowledge & Plan Explorer">
+  <meta property="og:title" content="VPS Hosting Plans: Which Specs Matter and Which Do Not">
+  <meta property="og:description" content="VPS knowledge, evidence-backed reviews and explainable plan recommendations">
+  <meta property="og:url" content="https://niceyayale.github.io/vpstab-web/blog/vps-hosting-plans-which-specs-matter-and-which-do-not.html">
+  <meta property="og:type" content="article">
+  <meta property="article:published_time" content="2026-11-08">
+  <meta property="article:tag" content="vps, hosting, benchmarks, infrastructure">
+  <link rel="canonical" href="https://niceyayale.github.io/vpstab-web/blog/vps-hosting-plans-which-specs-matter-and-which-do-not.html">
+  <link rel="alternate" hreflang="en" href="https://niceyayale.github.io/vpstab-web/blog/vps-hosting-plans-which-specs-matter-and-which-do-not.html">
+  <link rel="stylesheet" href="https://niceyayale.github.io/vpstab-web/assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="https://niceyayale.github.io/vpstab-web/" class="logo">VPSTab - VPS Knowledge & Plan Explorer</a>
+      <nav>
+        <a href="https://vpstab.com">Website</a>
+        <a href="https://niceyayale.github.io/vpstab-web/blog/">Blog</a>
+        <a href="https://github.com/niceyayale/vpstab-web">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container article-page">
+    <article>
+      <h1 class="article-title">VPS Hosting Plans: Which Specs Matter and Which Do Not</h1>
+      <div class="article-meta">
+        <time datetime="2026-11-08">2026-11-08</time>
+        <span class="tag">vps</span><span class="tag">hosting</span><span class="tag">benchmarks</span><span class="tag">infrastructure</span>
+      </div>
+      <div class="article-content">
+        <h1>VPS Hosting Plans: Which Specs Matter and Which Do Not</h1>
+<p>Two vps hosting plans can advertise the same number of cores, the same RAM, and the same price while delivering very different performance. The difference is usually in the details that the pricing table leaves out: how the CPU is shared, what kind of disk backs the storage, how much bandwidth is guaranteed, and what happens when you need support at 2 a.m.</p>
+<p>This guide covers the specifications that actually matter for vps hosting decisions, how to interpret them, and a repeatable way to compare plans before you commit.</p>
+<h2>Start With the Workload, Not the Spec Sheet</h2>
+<p>A plan is only good or bad relative to a workload. Before comparing numbers, write down what the server will do:</p>
+<ul>
+<li>A small website and database: low CPU, moderate RAM, fast disk for database queries.</li>
+<li>A build server or CI runner: burst CPU, high disk throughput, short-lived but heavy loads.</li>
+<li>A media or proxy service: network bandwidth and transfer limits dominate.</li>
+<li>A database primary: RAM, disk IOPS, and backup behavior matter more than core count.</li>
+<li>A learning or test environment: price and snapshot support often outweigh raw performance.</li>
+</ul>
+<p>Once the workload is clear, most specifications become easy to rank. Without it, every plan looks equally plausible.</p>
+<h2>vCPU: Cores Are Not Performance</h2>
+<p>A vCPU is a time slice on a physical core, not a dedicated core. Providers oversubscribe physical CPUs and rely on scheduling to share them. Two plans with "4 vCPU" can differ by a factor of two or more in real throughput.</p>
+<h3>Reading Steal Time and CPU Generation</h3>
+<p>Steal time is visible in <code>top</code> as the <code>st</code> column, and in <code>/proc/stat</code> as the <code>steal</code> field. A value that stays above a few percent under your normal load means the host is crowded. CPU generation matters too: a current-generation core at 2.8 GHz can outperform an older core at 3.5 GHz on the same workload.</p>
+<p>What to look for instead:</p>
+<ul>
+<li><strong>CPU generation and model.</strong> Newer generations usually deliver more work per clock cycle. Some providers publish the host CPU model; others do not.</li>
+<li><strong>Steal time.</strong> On a busy host, your virtual CPU waits while another tenant runs. High steal time shows up as inconsistent latency and lower benchmark scores.</li>
+<li><strong>Burst versus sustained.</strong> Some plans allow short bursts above the nominal share, which helps interactive workloads but not long compilations.</li>
+</ul>
+<p>A simple test is to run a fixed CPU benchmark and compare the result with the plan's price. If a provider does not publish benchmark data, treat the core count as a marketing number until you measure it yourself.</p>
+<h2>RAM: Quantity and Type</h2>
+<p>RAM is more straightforward, but two details still matter:</p>
+<ol>
+<li><strong>Dedicated versus burst.</strong> Some budget plans advertise a "burstable" memory ceiling that is only available under light contention. The guaranteed amount is the number to compare.</li>
+<li><strong>Generation and channels.</strong> DDR4 versus DDR5, and single-channel versus dual-channel configurations, affect memory bandwidth. Database and caching workloads notice this more than static sites.</li>
+</ol>
+<p>Also check whether the plan includes swap and how it is configured. Swap can prevent an out-of-memory crash, but heavy swapping on a shared disk is slow enough to be a symptom rather than a solution.</p>
+<h2>Storage: NVMe, SSD, and IOPS</h2>
+<p>Disk performance is the specification most often hidden behind a vague label. "SSD storage" can mean enterprise NVMe with guaranteed IOPS or a shared SATA drive with noisy neighbors.</p>
+<p>Questions to ask:</p>
+<ul>
+<li>Is the disk local NVMe, network-attached, or a distributed block store?</li>
+<li>Are IOPS guaranteed, or only "up to" a number?</li>
+<li>Is there a separate backup disk, and does it count against the plan's storage?</li>
+<li>What happens when the disk fills? Some providers throttle; others suspend the instance.</li>
+</ul>
+<h3>A Reproducible Disk Test</h3>
+<p>For a quick disk comparison, run the same random-read test on each candidate:</p>
+<pre><code class="language-bash">fio --name=randread --rw=randread --bs=4k --size=1G --runtime=60 --numjobs=1 --time_based</code></pre>
+<p>Record the reported IOPS. A local NVMe plan often reports tens of thousands of 4K random-read IOPS; a network-attached or heavily shared disk may report a small fraction of that. Repeat the test at the same time of day to reduce scheduling noise.</p>
+<p>For databases, random read/write performance matters more than sequential throughput. For backups and media files, sequential throughput and capacity matter more. A benchmark that only measures large sequential writes can mislead you about database behavior.</p>
+<h2>Bandwidth, Transfer, and Port Speed</h2>
+<p>Three different limits are often combined into one "bandwidth" figure:</p>
+<ul>
+<li><strong>Port speed</strong> is the maximum rate of the network interface, such as 1 Gbps.</li>
+<li><strong>Transfer allowance</strong> is the monthly volume, such as 2 TB.</li>
+<li><strong>Fair-use or acceptable-use policy</strong> may reduce speed after a threshold.</li>
+</ul>
+<p>A plan with a 1 Gbps port and a 1 TB transfer allowance is not the same as a plan with a 200 Mbps port and unmetered transfer. For a video service, port speed and peering quality dominate. For a small API, the monthly allowance is usually irrelevant.</p>
+<p>Check where the provider's data centers are located and how they peer with your users' networks. A low-latency region close to your audience is often more valuable than a slightly faster CPU in a distant region.</p>
+<h2>Virtualization and Isolation</h2>
+<p>KVM, Xen, and container-based virtualization behave differently:</p>
+<ul>
+<li><strong>KVM</strong> provides full virtual machines with their own kernel. It is flexible and widely supported.</li>
+<li><strong>Container-based</strong> plans share the host kernel, which can be cheaper but limits custom kernels and some networking features.</li>
+<li><strong>Xen</strong> is less common now but still appears in older offerings.</li>
+</ul>
+<p>If you need custom kernel modules, Docker with specific kernel features, or strong isolation, confirm the virtualization type before ordering. A container plan that looks cheaper may not support the workload at all.</p>
+<h2>Snapshots, Backups, and Recovery</h2>
+<p>Backups are part of the product, not an optional extra. Compare:</p>
+<ul>
+<li>Whether snapshots are included and how many</li>
+<li>Whether backups are stored on a separate system</li>
+<li>How long a restore takes and whether it is self-service</li>
+<li>Whether the provider tests restores</li>
+</ul>
+<p>A provider that offers cheap instances but charges heavily for restores can be more expensive than a plan with a higher monthly price and included backups. Ask for the restore procedure before an incident, not during one.</p>
+<h2>Support and Operational Details</h2>
+<p>Support quality is hard to compare from a pricing page. Practical signals:</p>
+<ul>
+<li>Is there a status page with incident history?</li>
+<li>Are maintenance windows announced in advance?</li>
+<li>Does the provider publish documentation for common recovery tasks?</li>
+<li>Is support available in your time zone, and is there a response-time commitment?</li>
+</ul>
+<p>For unmanaged plans, support usually covers the host and network, not your application. That is normal, but it means the operational burden is yours. Managed plans cost more; decide whether the difference is worth it for your team.</p>
+<h2>Comparing VPS Hosting Plans Side by Side</h2>
+<p>The table below shows why headline specifications can hide real differences. All three plans list plausible numbers; the measured disk result separates them.</p>
+<p>| Plan | vCPU | RAM | Disk | Port | Transfer | Measured 4K IOPS |</p>
+<p>|---|---|---|---|---|---|---|</p>
+<p>| A | 4 | 8 GB | local NVMe | 1 Gbps | 4 TB | 48,000 |</p>
+<p>| B | 4 | 8 GB | network SSD | 1 Gbps | 4 TB | 9,500 |</p>
+<p>| C | 2 | 4 GB | local NVMe | 500 Mbps | 2 TB | 31,000 |</p>
+<p>Plan B has the same vCPU count and RAM as Plan A, but a database on B will wait on storage far more often. Plan C has fewer cores and half the RAM, yet its local disk makes it a better fit for a small database than Plan B.</p>
+<h2>A Repeatable Comparison Method</h2>
+<p>Instead of comparing marketing tables side by side, use a small, consistent test:</p>
+<ol>
+<li><strong>Define the workload</strong> and the resource that limits it.</li>
+<li><strong>Collect the guaranteed specifications</strong>, not the burst or "up to" numbers.</li>
+<li><strong>Run the same benchmark</strong> on a short-term instance from each candidate. Record CPU model, steal time, disk IOPS, and network latency to a real user region.</li>
+<li><strong>Calculate the cost per unit of measured performance</strong>, including backups and transfer.</li>
+<li><strong>Test the restore path</strong> on a non-critical snapshot.</li>
+<li><strong>Review the contract terms</strong> for renewal pricing, cancellation, and data retention.</li>
+</ol>
+<p>This method turns a subjective comparison into a set of observations. It also makes it clear when a cheaper plan is genuinely cheaper and when it simply moves cost into support, restores, or performance variability.</p>
+<h2>Providers Worth Benchmarking</h2>
+<p>Well-known options include <a href="https://www.digitalocean.com/" target="_blank" rel="noopener">DigitalOcean</a>, <a href="https://www.hetzner.com/" target="_blank" rel="noopener">Hetzner</a>, <a href="https://www.vultr.com/" target="_blank" rel="noopener">Vultr</a>, and <a href="https://www.linode.com/" target="_blank" rel="noopener">Linode</a>, each with different strengths in price, regions, and network quality. Smaller regional providers can offer better latency for a specific audience, but verify their backup and support practices before relying on them.</p>
+<p>Provider marketing pages change frequently. Rather than trusting a comparison written months ago, check current plan pages and run your own measurements. <a href="https://vpstab.com" target="_blank" rel="noopener">VPSTab</a> collects VPS plan comparisons and benchmark data with sources attached, and states the criteria behind its recommendations, so you can see why a plan is suggested rather than only which one is.</p>
+<h2>FAQ</h2>
+<p><strong>Is a higher core count always faster?</strong></p>
+<p>No. Core count is a share of a physical CPU. Generation, steal time, and memory bandwidth can matter more than the number of vCPUs.</p>
+<p><strong>What is steal time?</strong></p>
+<p>It is the time your virtual CPU wanted to run but the host was busy serving other tenants. High steal time produces inconsistent performance.</p>
+<p><strong>Do I need a dedicated server instead of a VPS?</strong></p>
+<p>Only if your workload consistently saturates the shared resources or requires hardware isolation. Many workloads run well on a properly sized VPS.</p>
+<p><strong>How much bandwidth does a small site need?</strong></p>
+<p>Often less than the plan's monthly allowance. Port speed and latency to your users usually matter more than the transfer cap.</p>
+<p><strong>Are cheap VPS plans unreliable?</strong></p>
+<p>Not necessarily. Price differences often come from oversubscription, backup policy, and support scope. Measure the plan against your workload instead of assuming price equals reliability.</p>
+<h2>Conclusion</h2>
+<p>VPS comparison is less about the headline numbers and more about guaranteed resources, disk behavior, network placement, and recovery procedures. Define the workload, measure the same benchmark across candidates, and include backups and support in the total cost. That process produces a decision you can defend later, when the instance is under load and the pricing page is no longer relevant.</p>
+      </div>
+      <div class="article-cta">
+        <p>Explore more at <a href="https://vpstab.com">VPSTab - VPS Knowledge & Plan Explorer</a></p>
+        <a href="https://vpstab.com" class="btn">Visit Website</a>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 VPSTab - VPS Knowledge & Plan Explorer. <a href="https://vpstab.com">https://vpstab.com</a></p>
+      <p><a href="https://github.com/niceyayale/vpstab-web">View on GitHub</a></p>
+    </div>
+  </footer>
+</body>
+</html>
